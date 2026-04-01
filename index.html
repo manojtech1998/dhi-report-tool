@@ -3,48 +3,38 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DHI Clinical Report Builder</title>
+<title>DHI Report Builder</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js"></script>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
 
-:root{
-  --pri:#006D77;
-  --bg:#F0F4F8;
-  --txt:#1C2B3A;
-}
-
-/* RESET */
 *{margin:0;padding:0;box-sizing:border-box}
 
-/* FIXED BODY */
-body{
+html,body{
+  height:100%;
   font-family:'Inter',sans-serif;
-  background:var(--bg);
-  color:var(--txt);
-  min-height:100vh;
-  display:flex;
-  flex-direction:column;
   overflow-x:hidden;
   overflow-y:auto;
+  background:#f4f7fa;
 }
 
 /* HEADER */
 header{
+  height:60px;
   background:#004D55;
   color:#fff;
-  padding:12px 20px;
   display:flex;
+  align-items:center;
   justify-content:space-between;
+  padding:0 20px;
 }
 
 /* LAYOUT */
 .app{
   display:flex;
-  flex:1;
-  min-height:0;
+  height:calc(100vh - 60px);
 }
 
 /* SIDEBAR */
@@ -52,10 +42,29 @@ header{
   width:240px;
   background:#1A2A3A;
   color:#fff;
+  padding:10px;
   overflow-y:auto;
 }
 
-/* CONTENT SCROLL FIX */
+.sidebar button{
+  width:100%;
+  margin-bottom:10px;
+  padding:10px;
+  background:#00B4D8;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+.day{
+  padding:8px;
+  margin:5px 0;
+  background:#243447;
+  cursor:pointer;
+  border-radius:6px;
+}
+
+/* CONTENT */
 .content{
   flex:1;
   overflow-y:auto;
@@ -65,51 +74,26 @@ header{
 /* CARD */
 .card{
   background:#fff;
-  padding:15px;
-  margin-bottom:15px;
+  padding:20px;
   border-radius:10px;
+  margin-bottom:20px;
 }
 
 /* INPUT */
-input,textarea,select{
+input,textarea{
   width:100%;
-  padding:8px;
-  margin-top:5px;
+  padding:10px;
+  margin:8px 0;
+  border-radius:6px;
   border:1px solid #ccc;
-  border-radius:6px;
 }
 
-/* GRID */
-.grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
+/* PREVIEW */
+.slide{
+  min-height:100vh;
+  padding:20px;
+  border-bottom:1px solid #ddd;
 }
-
-/* BUTTON */
-button{
-  padding:8px 12px;
-  border:none;
-  border-radius:6px;
-  cursor:pointer;
-}
-
-/* PREVIEW FIX */
-.pv-slide{
-  width:100%;
-  background:#fff;
-  display:flex;
-  overflow:auto;
-}
-
-.pv-panel{
-  overflow:auto;
-}
-
-.pv-rows{
-  overflow:auto;
-}
-
 </style>
 </head>
 
@@ -121,87 +105,108 @@ button{
 </header>
 
 <div class="app">
+
   <div class="sidebar">
     <button onclick="addDay()">+ Add Day</button>
-    <div id="days"></div>
+    <div id="dayList"></div>
   </div>
 
   <div class="content" id="content"></div>
+
 </div>
 
 <script>
 
-/* DATA */
-let days = [
-  {
-    patientName:"",
-    grafts:"",
-    notes:""
-  }
+let days = JSON.parse(localStorage.getItem("data")) || [
+  {patientName:"", grafts:"", notes:""}
 ];
 
-/* RENDER */
-function render(){
-  document.getElementById("days").innerHTML = days.map((d,i)=>`
-    <div onclick="openDay(${i})">Day ${i+1}</div>
-  `).join("");
+let current = 0;
 
-  openDay(0);
+/* RENDER SIDEBAR */
+function renderSidebar(){
+  document.getElementById("dayList").innerHTML =
+    days.map((d,i)=>`
+      <div class="day" onclick="openDay(${i})">
+        Day ${i+1}
+      </div>
+    `).join("");
 }
 
 /* OPEN DAY */
 function openDay(i){
+  current = i;
   let d = days[i];
 
   document.getElementById("content").innerHTML = `
     <div class="card">
+      <h3>Day ${i+1}</h3>
+
       <label>Patient Name</label>
-      <input value="${d.patientName}" oninput="update(${i},'patientName',this.value)">
+      <input value="${d.patientName}" 
+        oninput="update('patientName',this.value)">
 
       <label>Grafts</label>
-      <input value="${d.grafts}" oninput="update(${i},'grafts',this.value)">
+      <input value="${d.grafts}" 
+        oninput="update('grafts',this.value)">
 
       <label>Notes</label>
-      <textarea oninput="update(${i},'notes',this.value)">${d.notes}</textarea>
+      <textarea oninput="update('notes',this.value)">
+${d.notes}</textarea>
+
     </div>
   `;
 }
 
 /* UPDATE */
-function update(i,key,val){
-  days[i][key]=val;
-  localStorage.setItem("data",JSON.stringify(days));
+function update(key,val){
+  days[current][key] = val;
+  localStorage.setItem("data", JSON.stringify(days));
 }
 
 /* ADD DAY */
 function addDay(){
   days.push({patientName:"",grafts:"",notes:""});
-  render();
+  renderSidebar();
+  openDay(days.length-1);
 }
 
-/* PREVIEW */
+/* PREVIEW FIXED */
 function preview(){
-  let html = days.map(d=>`
-    <div class="pv-slide">
-      <div style="padding:20px">
-        <h3>${d.patientName}</h3>
-        <p>Grafts: ${d.grafts}</p>
-        <p>${d.notes}</p>
-      </div>
+
+  let html = `
+  <html>
+  <head>
+    <title>Preview</title>
+    <style>
+      body{margin:0;font-family:sans-serif}
+      .slide{
+        min-height:100vh;
+        padding:20px;
+        border-bottom:1px solid #ccc;
+      }
+    </style>
+  </head>
+  <body>
+  `;
+
+  html += days.map(d=>`
+    <div class="slide">
+      <h2>${d.patientName}</h2>
+      <p><b>Grafts:</b> ${d.grafts}</p>
+      <p>${d.notes}</p>
     </div>
   `).join("");
+
+  html += "</body></html>";
 
   let w = window.open();
   w.document.write(html);
 }
 
-/* LOAD */
-let saved = localStorage.getItem("data");
-if(saved){
-  days = JSON.parse(saved);
-}
-
-render();
+/* INIT */
+renderSidebar();
+openDay(0);
 
 </script>
 
