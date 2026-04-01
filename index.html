@@ -1272,9 +1272,20 @@ function buildPrintHTML() {
 body { font-family: Arial, Helvetica, sans-serif; background: #fff; }
 
 /* Clinical slide */
-.slide { width: 10in; height: 5.625in; display: flex; overflow: hidden; background: #fff; page-break-after: always; }
+.slide { 
+  width: 10in; 
+  min-height: 5.625in;  /* ✅ change */
+  display: flex; 
+  overflow: auto;       /* ✅ change */
+  background: #fff; 
+  page-break-after: always; 
+}
 .photos { flex: 0 0 6.68in; padding: .07in .09in 0 .09in; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: .034in .07in; }
-.pcell { display: flex; flex-direction: column; overflow: hidden; }
+.pcell { 
+  display: flex; 
+  flex-direction: column; 
+  overflow: auto;  /* ✅ */
+}
 .pcell img { flex: 1; width: 100%; height: 0; min-height: 0; object-fit: cover; object-position: center; display: block; }
 .noph { flex: 1; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #bbb; font-size: 7pt; text-align: center; border: 1px dashed #ccc; padding: 4px; }
 .cap { font-size: 6.8pt; font-style: italic; text-align: center; padding: 1.5px 0 2.5px; color: #444; flex-shrink: 0; line-height: 1.2; }
