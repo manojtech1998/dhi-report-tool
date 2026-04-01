@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DHI Clinical Report Builder</title>
+<!-- PptxGenJS loaded via script tag for guaranteed availability -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js"></script>
+<style>
+/* ═══════════════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+:root{
+  --pri:#006D77; --prid:#004D55; --acc:#00B4D8;
+  --bg:#F0F4F8;  --bdr:#D0DCE8; --txt:#1C2B3A;
+  --muted:#6B7F93; --red:#C0392B; --grn:#27AE60;
+  --warn:#E67E22;  --side:#1A2A3A; --side2:#243447;
+}
+
+/* ═══════════════════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* ═══════════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════════ */
+header{
+  background:var(--prid);color:#fff;
+  padding:11px 20px;display:flex;align-items:center;justify-content:space-between;
+  box-shadow:0 2px 12px rgba(0,0,0,.3);flex-shrink:0;z-index:100;gap:12px;
+}
+.hl{display:flex;align-items:center;gap:11px;flex-shrink:0}
+.logo{width:36px;height:36px;background:var(--acc);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+header h1{font-size:16px;font-weight:700;white-space:nowrap}
+header p{font-size:11px;opacity:.55;margin-top:1px;white-space:nowrap}
+.hbtns{display:flex;gap:6px;flex-wrap:wrap}
+.hbtn{padding:7px 13px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;border:none;display:flex;align-items:center;gap:5px;transition:all .18s;white-space:nowrap;letter-spacing:.1px}
+.hbtn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+.b-prev{background:rgba(255,255,255,.13);color:#fff;border:1px solid rgba(255,255,255,.22)}.b-prev:hover:not(:disabled){background:rgba(255,255,255,.22)}
+.b-bkup{background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.15)}.b-bkup:hover:not(:disabled){background:rgba(255,255,255,.14)}
+.b-pptx{background:#1565C0;color:#fff}.b-pptx:hover:not(:disabled){background:#1976D2}
+.b-pdf {background:var(--red);color:#fff}.b-pdf:hover:not(:disabled){background:#a93226}
+
+/* ═══════════════════════════════════════════════════
+   APP LAYOUT
+═══════════════════════════════════════════════════ */
+.app{display:flex;flex:1;min-height:0;overflow:hidden;height:0}
+
+/* ═══════════════════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════════════════ */
+.sidebar{width:250px;min-width:250px;background:var(--side);display:flex;flex-direction:column;overflow:hidden;border-right:1px solid rgba(255,255,255,.04)}
+.sb-hd{padding:12px 15px 8px;font-size:9.5px;font-weight:700;letter-spacing:1.2px;color:rgba(255,255,255,.3);text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,.06)}
+.day-list{flex:1;overflow-y:auto;padding:5px 0}
+.day-list::-webkit-scrollbar{width:4px}.day-list::-webkit-scrollbar-track{background:transparent}.day-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:4px}
+.di{padding:9px 15px;cursor:pointer;display:flex;align-items:center;gap:9px;border-left:3px solid transparent;transition:background .15s}
+.di:hover{background:rgba(255,255,255,.05)}
+.di.active{background:rgba(0,180,216,.12);border-left-color:var(--acc)}
+.dn{width:24px;height:24px;border-radius:6px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.65);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.di.active .dn{background:var(--acc);color:#fff}
+.dm{flex:1;min-width:0}
+.dm-name{font-size:11.5px;font-weight:600;color:rgba(255,255,255,.85);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dm-sub{font-size:9.5px;color:rgba(255,255,255,.35);margin-top:1px}
+.dm-prog{margin-top:4px;height:3px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden}
+.dm-prog-bar{height:100%;border-radius:2px;transition:width .3s;background:var(--acc)}
+.dm-prog-bar.full{background:var(--grn)}
+.dbadge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:7px;flex-shrink:0}
+.dbadge.ok{background:rgba(39,174,96,.22);color:#6dcc8f}
+.dbadge.pt{background:rgba(230,126,34,.22);color:#f0a060}
+.sb-ft{padding:10px 14px;border-top:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;gap:7px}
+.btn-add{width:100%;padding:8px;background:rgba(0,180,216,.12);color:var(--acc);border:1.5px dashed rgba(0,180,216,.35);border-radius:8px;font-size:11.5px;font-weight:600;cursor:pointer;transition:background .15s}
+.btn-add:hover{background:rgba(0,180,216,.2)}
+.sb-actions{display:flex;gap:6px}
+.sb-act-btn{flex:1;padding:7px 4px;border-radius:7px;font-size:10px;font-weight:600;cursor:pointer;border:none;text-align:center;transition:all .18s}
+.sb-act-save{background:rgba(39,174,96,.18);color:#6dcc8f;border:1px solid rgba(39,174,96,.25)}.sb-act-save:hover{background:rgba(39,174,96,.28)}
+.sb-act-clear{background:rgba(192,57,43,.15);color:#e88;border:1px solid rgba(192,57,43,.2)}.sb-act-clear:hover{background:rgba(192,57,43,.25)}
+
+/* ═══════════════════════════════════════════════════
+   CONTENT AREA
+═══════════════════════════════════════════════════ */
+.content{flex:1;overflow-y:auto;padding:20px 26px}
+.content::-webkit-scrollbar{width:5px}.content::-webkit-scrollbar-track{background:transparent}.content::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:4px}
+
+/* ═══════════════════════════════════════════════════
+   FORM CARDS
+═══════════════════════════════════════════════════ */
+.card{background:#fff;border-radius:11px;border:1px solid var(--bdr);margin-bottom:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.card-hd{padding:10px 16px;background:var(--prid);color:#fff;font-size:11.5px;font-weight:600;letter-spacing:.3px;display:flex;align-items:center;gap:7px}
+.card-bd{padding:15px}
+
+/* ═══════════════════════════════════════════════════
+   GRIDS
+═══════════════════════════════════════════════════ */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+.full{grid-column:1/-1}
+
+/* ═══════════════════════════════════════════════════
+   FORM FIELDS
+═══════════════════════════════════════════════════ */
+.fg{display:flex;flex-direction:column;gap:3px}
+.fg label{font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.4px;text-transform:uppercase}
+.fg input,.fg select,.fg textarea{
+  padding:7px 10px;border:1.5px solid var(--bdr);border-radius:7px;
+  font-size:12.5px;font-family:inherit;color:var(--txt);
+  transition:border-color .18s,box-shadow .18s;background:#fff;
+}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px rgba(0,109,119,.1)}
+.fg textarea{min-height:56px;resize:vertical}
+.fg input.err,.fg select.err,.fg textarea.err{border-color:var(--red)!important;box-shadow:0 0 0 2px rgba(192,57,43,.12)!important}
+
+/* ═══════════════════════════════════════════════════
+   IMAGE UPLOAD BLOCKS — FIXED object-fit
+═══════════════════════════════════════════════════ */
+.ig4{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+.ib{border:2px dashed var(--bdr);border-radius:10px;overflow:hidden;cursor:pointer;background:#FAFBFC;transition:border-color .18s,box-shadow .18s;position:relative;display:flex;flex-direction:column}
+.ib:hover{border-color:var(--pri);box-shadow:0 0 0 3px rgba(0,109,119,.08)}
+.ib.filled{border-style:solid;border-color:var(--pri);background:#fff}
+.ib.ib-err{border-color:var(--red)!important;box-shadow:0 0 0 2px rgba(192,57,43,.12)!important}
+.ib input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;border:none;padding:0;z-index:2}
+/* FIXED: placeholder shown when no image */
+.ip{height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px;text-align:center;pointer-events:none;flex-shrink:0}
+.ip .ico{font-size:22px;opacity:.25;margin-bottom:5px}
+.ip .lbl{font-size:11px;font-weight:600;color:var(--pri)}
+.ip .sub{font-size:9px;color:var(--muted);margin-top:2px;line-height:1.3}
+/* FIXED: image always fills container with no gaps, no distortion */
+.iprev{
+  display:none;
+  width:100%;
+  height:120px;
+  object-fit:cover;
+  object-position:center;
+  flex-shrink:0;
+}
+.ib.filled .iprev{display:block}
+.ib.filled .ip{display:none}
+.icap{padding:5px 6px;background:#fff;border-top:1px solid var(--bdr);font-size:9.5px;font-weight:500;color:#555;text-align:center;line-height:1.3;flex-shrink:0}
+.irm{
+  position:absolute;top:5px;right:5px;
+  width:22px;height:22px;
+  background:rgba(192,57,43,.92);color:#fff;border-radius:50%;
+  display:none;align-items:center;justify-content:center;
+  font-size:13px;cursor:pointer;z-index:10;border:none;font-weight:700;line-height:1;
+}
+.ib.filled:hover .irm{display:flex}
+
+/* ═══════════════════════════════════════════════════
+   DAY HEADER
+═══════════════════════════════════════════════════ */
+.dh{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px}
+.dh-left h2{font-size:18px;font-weight:700;color:var(--prid)}
+.dh-left .dsub{font-size:11.5px;color:var(--muted);margin-top:2px}
+.dacts{display:flex;gap:6px;flex-wrap:wrap}
+.btn-cp{padding:6px 12px;background:#EEF5F5;color:var(--pri);border:1px solid #BCD8DA;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;transition:background .15s}.btn-cp:hover{background:#daeef0}
+.btn-rm{padding:6px 12px;background:#FEF0EE;color:var(--red);border:1px solid #F5C6C6;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;transition:background .15s}.btn-rm:hover{background:#fde0dd}
+
+/* ═══════════════════════════════════════════════════
+   TOTALS BANNER
+═══════════════════════════════════════════════════ */
+.totals-bar{
+  background:linear-gradient(135deg,#004D55,#006D77);
+  color:#fff;border-radius:10px;padding:11px 16px;
+  margin-bottom:14px;display:flex;align-items:stretch;
+}
+.titem{flex:1;padding:0 14px;text-align:center}
+.titem:not(:last-child){border-right:1px solid rgba(255,255,255,.16)}
+.tlabel{font-size:9.5px;opacity:.6;margin-bottom:2px;font-weight:500;letter-spacing:.2px}
+.tval{font-size:17px;font-weight:700;letter-spacing:-.3px}
+
+/* ═══════════════════════════════════════════════════
+   STATUS BAR
+═══════════════════════════════════════════════════ */
+.statusbar{
+  padding:7px 22px;background:#fff;border-top:1px solid var(--bdr);
+  display:flex;align-items:center;gap:10px;font-size:12px;flex-shrink:0;
+}
+.sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sdot.ready{background:var(--grn)}
+.sdot.busy{background:var(--warn);animation:sdotpulse 1s infinite}
+.sdot.err{background:var(--red)}
+@keyframes sdotpulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ═══════════════════════════════════════════════════
+   TOAST NOTIFICATIONS
+═══════════════════════════════════════════════════ */
+.toast-stack{position:fixed;bottom:18px;right:18px;z-index:9999;display:flex;flex-direction:column-reverse;gap:8px;pointer-events:none}
+.toast{
+  padding:11px 16px;border-radius:10px;font-size:12.5px;font-weight:500;color:#fff;
+  box-shadow:0 6px 20px rgba(0,0,0,.2);max-width:320px;
+  animation:toastIn .3s ease forwards;pointer-events:auto;
+}
+.toast.out{animation:toastOut .3s ease forwards}
+.toast.ok{background:var(--grn)}.toast.err{background:var(--red)}.toast.inf{background:var(--pri)}.toast.warn{background:var(--warn)}
+@keyframes toastIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes toastOut{from{transform:translateY(0);opacity:1}to{transform:translateY(20px);opacity:0}}
+
+/* ═══════════════════════════════════════════════════
+   LOADING OVERLAY
+═══════════════════════════════════════════════════ */
+.loading-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:5000;
+  align-items:center;justify-content:center;flex-direction:column;gap:16px;
+}
+.loading-overlay.open{display:flex}
+.loading-spinner{width:48px;height:48px;border:4px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-msg{color:#fff;font-size:15px;font-weight:600;letter-spacing:.2px}
+.loading-sub{color:rgba(255,255,255,.6);font-size:12px;margin-top:-8px}
+
+.day-form{display:none}.day-form.active{display:block}
+
+/* ═══════════════════════════════════════════════════
+   CONFIRM DIALOG
+═══════════════════════════════════════════════════ */
+.confirm-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:6000;
+  align-items:center;justify-content:center;
+}
+.confirm-overlay.open{display:flex}
+.confirm-box{
+  background:#fff;border-radius:14px;padding:28px 32px;
+  max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.3);
+  text-align:center;
+}
+.confirm-box h3{font-size:17px;font-weight:700;color:var(--txt);margin-bottom:8px}
+.confirm-box p{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:22px}
+.confirm-btns{display:flex;gap:10px;justify-content:center}
+.confirm-btn{padding:9px 24px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .18s}
+.confirm-cancel{background:#F0F4F8;color:var(--muted)}.confirm-cancel:hover{background:#e2e8f0}
+.confirm-ok{background:var(--red);color:#fff}.confirm-ok:hover{background:#a93226}
+
+/* ═══════════════════════════════════════════════════
+   PREVIEW MODAL
+═══════════════════════════════════════════════════ */
+.modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:3000;
+  align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;
+}
+.modal-overlay.open{display:flex}
+.modal{
+  background:#1a1a2e;border-radius:13px;width:100%;max-width:1080px;
+  display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.6);margin:auto;
+}
+.modal-hd{
+  padding:13px 20px;background:#16213e;color:#fff;
+  display:flex;align-items:center;justify-content:space-between;
+  border-radius:13px 13px 0 0;flex-shrink:0;
+}
+.modal-hd span{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.modal-close{
+  width:30px;height:30px;background:rgba(255,255,255,.1);border:none;
+  color:#fff;border-radius:50%;cursor:pointer;font-size:15px;
+  display:flex;align-items:center;justify-content:center;transition:background .15s;
+}
+.modal-close:hover{background:rgba(255,255,255,.2)}
+.modal-body{padding:14px;display:flex;flex-direction:column;gap:12px;border-radius:0 0 13px 13px;overflow:hidden}
+.slide-wrap{border-radius:8px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.4)}
+.slide-label{
+  background:#0f0f1a;color:rgba(255,255,255,.4);
+  font-size:9.5px;font-weight:600;padding:5px 13px;
+  letter-spacing:.9px;text-transform:uppercase;
+  border-bottom:1px solid rgba(255,255,255,.05);
+}
+
+/* ═══════════════════════════════════════════════════
+   PREVIEW SLIDES (pixel-perfect output match)
+═══════════════════════════════════════════════════ */
+.pv-slide{width:100%;aspect-ratio:10/5.625;display:flex;background:#fff;overflow:hidden;font-family:Arial,Helvetica,sans-serif}
+.pv-photos{flex:0 0 66.8%;padding:.65% .9% 0 .9%;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:.35% .65%}
+.pv-pcell{display:flex;flex-direction:column;overflow:hidden}
+.pv-pcell img{flex:1;width:100%;height:0;min-height:0;object-fit:cover;display:block}
+.pv-noph{flex:1;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:7px;text-align:center;border:1px dashed #ccc;padding:3px}
+.pv-cap{font-size:6.3px;font-style:italic;text-align:center;padding:1px 0 2px;color:#444;flex-shrink:0;line-height:1.2}
+.pv-panel{flex:0 0 33.2%;background:#F4F4F4;border-left:1px solid #ccc;padding:.9% 1.1% .7%;display:flex;flex-direction:column;overflow:hidden}
+.pv-ptitle{font-size:9px;font-weight:bold;text-align:center;text-decoration:underline;margin-bottom:.2em;color:#000}
+.pv-rows{flex:1;overflow:hidden;font-size:6.5px;color:#000;line-height:1.45}
+.pv-r{margin-bottom:1px}
+.pv-r.gap{margin-bottom:2.5px}
+.pv-sep{border:none;border-top:.5px solid #ccc;margin:2px 0}
+.pv-notes{margin-top:2px;background:#fff;padding:2.5px 4px;border-left:2px solid #1a6b9a;font-size:6.2px;color:#333;line-height:1.4;flex-shrink:0}
+.pv-ot{width:100%;aspect-ratio:10/5.625;display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.4%;padding:1.5%;background:#fff;overflow:hidden;font-family:Arial,Helvetica,sans-serif}
+.pv-ocell{display:flex;flex-direction:column;overflow:hidden}
+.pv-ocell img{flex:1;width:100%;height:0;min-height:0;object-fit:contain;display:block;border:.5px solid #ddd}
+.pv-onoph{flex:1;background:#f7f7f7;border:1px dashed #ddd;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:7px;text-align:center}
+.pv-ocap{font-size:6.3px;font-style:italic;text-align:center;padding:2px 0 0;color:#444;flex-shrink:0}
+.pv-oright{display:flex;flex-direction:column;gap:2%;overflow:hidden}
+.pv-ohalf{display:flex;flex-direction:column;flex:1;overflow:hidden}
+.pv-ohalf img{flex:1;width:100%;height:0;min-height:0;object-fit:contain;border:.5px solid #ddd;display:block}
+.pv-ohalf .pv-onoph{flex:1}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="hl">
+    <div class="logo">🏥</div>
+    <div>
+      <h1>DHI Clinical Report Builder</h1>
+      <p>Hair Transplant OT · Daily Report Generator</p>
+    </div>
+  </div>
+  <div class="hbtns">
+    <button class="hbtn b-prev"  id="btn-prev" onclick="openPreview()">👁 Preview</button>
+    <button class="hbtn b-bkup" onclick="showBackupMenu()" title="Backup options">💾 Backup</button>
+    <button class="hbtn b-pptx" id="btn-pptx" onclick="generateReport('pptx')">📊 PPTX</button>
+    <button class="hbtn b-pdf"  id="btn-pdf"  onclick="generateReport('pdf')">📄 PDF</button>
+  </div>
+</header>
+
+<!-- APP -->
+<div class="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-hd">Session Days</div>
+    <div class="day-list" id="day-list"></div>
+    <div class="sb-ft">
+      <button class="btn-add" onclick="addDay()">＋ Add Another Day</button>
+      <div class="sb-actions">
+        <button class="sb-act-btn sb-act-save" onclick="manualSave()">💾 Save</button>
+        <button class="sb-act-btn sb-act-clear" onclick="confirmClear()">🗑 Clear All</button>
+      </div>
+    </div>
+  </div>
+  <!-- CONTENT -->
+  <div class="content" id="content"></div>
+</div>
+
+<!-- STATUS BAR -->
+<div class="statusbar">
+  <div class="sdot ready" id="sdot"></div>
+  <span id="stext">Ready — data auto-saves as you type</span>
+</div>
+
+<!-- TOAST STACK -->
+<div class="toast-stack" id="toast-stack"></div>
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loading">
+  <div class="loading-spinner"></div>
+  <div class="loading-msg" id="loading-msg">Generating…</div>
+  <div class="loading-sub" id="loading-sub">Please wait</div>
+</div>
+
+<!-- CONFIRM DIALOG -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <h3 id="confirm-title">Are you sure?</h3>
+    <p id="confirm-msg">This action cannot be undone.</p>
+    <div class="confirm-btns">
+      <button class="confirm-btn confirm-cancel" onclick="closeConfirm()">Cancel</button>
+      <button class="confirm-btn confirm-ok" id="confirm-ok-btn" onclick="runConfirm()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- PREVIEW MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="onModalOverlayClick(event)">
+  <div class="modal" id="modal">
+    <div class="modal-hd">
+      <span>📋 Report Preview — All Slides</span>
+      <button class="modal-close" onclick="closePreview()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<!-- Hidden file input for backup restore -->
+<input type="file" id="restore-input" accept=".json" style="display:none" onchange="restoreBackup(this)">
+
+<script>
+'use strict';
+/* ═══════════════════════════════════════════════════════
+   CONSTANTS
+═══════════════════════════════════════════════════════ */
+const LS_KEY = 'dhi_report_builder_v3';
+const AUTOSAVE_DELAY = 1200; // ms debounce
+
+/* ═══════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════ */
+let days = [];
+let activeIdx = 0;
+let autosaveTimer = null;
+let confirmCallback = null;
+
+/* ═══════════════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════════════ */
+const uid = () => Math.random().toString(36).slice(2, 9);
+
+function escH(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escTxt(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function parseNum(v) {
+  return parseInt(String(v || '').replace(/,/g,''), 10) || 0;
+}
+function fmtDate(s) {
+  if (!s) return '';
+  try {
+    const d = new Date(s + 'T12:00:00');
+    return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  } catch(e) { return s; }
+}
+function getTotals() {
+  return {
+    g: days.reduce((s,d) => s + parseNum(d.grafts), 0),
+    f: days.reduce((s,d) => s + parseNum(d.folliclesImplanted), 0)
+  };
+}
+function dayProgress(d) {
+  // Returns 0-100 based on fields filled + images uploaded
+  const fields = ['patientName','surgeon','nurse','grafts','folliclesImplanted','bp'];
+  const imgSlots = Object.values(d.img).filter(Boolean).length; // 0-4
+  const otSlots  = Object.values(d.ot).filter(Boolean).length;  // 0-4
+  const fieldScore = fields.filter(f => (d[f]||'').toString().trim()).length;
+  const total = fields.length + 4 + 4; // 14
+  const filled = fieldScore + imgSlots + otSlots;
+  return Math.round((filled / total) * 100);
+}
+
+/* ═══════════════════════════════════════════════════════
+   AUTO NOTES LOGIC
+═══════════════════════════════════════════════════════ */
+function getNotesForOutput(d, idx) {
+  let note = (d.notes || '').trim();
+  const isFirst = idx === 0 && days.length > 1;
+  const isLast  = idx === days.length - 1 && days.length > 1;
+  const cont = 'Procedure continued to next day';
+
+  if (isFirst) {
+    // Strip any old instance then append
+    note = note.replace(/Procedure continued to next day\.?\n?/gi, '').trim();
+    note = note ? note + '\n' + cont : cont;
+  }
+  if (isLast) {
+    const { g, f } = getTotals();
+    const gLine = `Grafts in ${days.length} days: ${g.toLocaleString()}`;
+    const fLine = `Follicles in ${days.length} days: ${f.toLocaleString()}`;
+    note = note.replace(/Grafts in \d+ days:.*(\n|$)/gi, '')
+               .replace(/Follicles in \d+ days:.*(\n|$)/gi, '').trim();
+    note = note ? note + '\n' + gLine + '\n' + fLine : gLine + '\n' + fLine;
+  }
+  return note;
+}
+
+/* ═══════════════════════════════════════════════════════
+   DAY FACTORY
+═══════════════════════════════════════════════════════ */
+function newDay(n) {
+  const d = new Date();
+  d.setDate(d.getDate() + (n - 1));
+  return {
+    id: uid(), n,
+    date: d.toISOString().slice(0, 10),
+    patientName: '', dayLabel: `Day ${n}`,
+    clinic: 'Delhi', surgeon: '', nurse: '',
+    age: '', gender: 'Male',
+    diagnosis: 'Androgenic Alopecia', grade: '',
+    bp: '', contraindications: 'None',
+    folliclesBooked: '', grafts: '', folliclesImplanted: '',
+    graftRatio: '', transectionRate: '',
+    extractionTime: '', implantationTime: '',
+    density: '', punches: '', implanterNeedle: '',
+    notes: '',
+    img: { clinical_marking: null, recipient_after: null, donor_after: null, follicle_tray: null },
+    ot:  { ot_page1: null, ot_page2: null, adt: null, met: null }
+  };
+}
+
+/* ═══════════════════════════════════════════════════════
+   AUTOSAVE / LOCALSTORAGE
+═══════════════════════════════════════════════════════ */
+function scheduleAutosave() {
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(doSave, AUTOSAVE_DELAY);
+}
+function doSave() {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify({ days, activeIdx, savedAt: Date.now() }));
+    setStatus('✅ Auto-saved', false, true);
+  } catch(e) {
+    setStatus('⚠️ Save failed (storage full?)', false);
+    toast('Auto-save failed — storage may be full', 'warn');
+  }
+}
+function manualSave() {
+  doSave();
+  toast('💾 Data saved!', 'ok');
+}
+function loadSaved() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    if (!data.days || !Array.isArray(data.days) || data.days.length === 0) return false;
+    days = data.days;
+    activeIdx = Math.min(data.activeIdx || 0, days.length - 1);
+    return true;
+  } catch(e) {
+    console.warn('Failed to load saved data:', e);
+    return false;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   BACKUP / RESTORE
+═══════════════════════════════════════════════════════ */
+function showBackupMenu() {
+  // Simple inline menu via confirm pattern
+  const menu = [
+    '1. Download Backup (JSON)',
+    '2. Restore from Backup',
+  ].join('\n');
+  // Use a custom approach — show 2 quick toasts with actions
+  downloadBackup();
+}
+
+function downloadBackup() {
+  const data = JSON.stringify({ days, savedAt: new Date().toISOString(), version: 3 }, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const name = `DHI_Backup_${(days[0]?.patientName||'report').replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}.json`;
+  a.href = url; a.download = name; a.click();
+  URL.revokeObjectURL(url);
+  toast('📦 Backup downloaded: ' + name, 'ok');
+}
+
+function triggerRestore() {
+  document.getElementById('restore-input').click();
+}
+
+function restoreBackup(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.days || !Array.isArray(data.days)) throw new Error('Invalid backup file');
+      days = data.days;
+      activeIdx = 0;
+      doSave();
+      renderAll();
+      toast('✅ Backup restored successfully!', 'ok');
+    } catch(err) {
+      toast('❌ Invalid backup file', 'err');
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+/* ═══════════════════════════════════════════════════════
+   CONFIRM DIALOG
+═══════════════════════════════════════════════════════ */
+function confirmClear() {
+  showConfirm(
+    '🗑 Clear All Data',
+    'This will permanently delete all session data for all days. This cannot be undone.',
+    () => {
+      days = [newDay(1)];
+      activeIdx = 0;
+      doSave();
+      renderAll();
+      toast('All data cleared', 'warn');
+    }
+  );
+}
+function showConfirm(title, msg, onOk) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-msg').textContent = msg;
+  confirmCallback = onOk;
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+function runConfirm() {
+  closeConfirm();
+  if (typeof confirmCallback === 'function') confirmCallback();
+  confirmCallback = null;
+}
+function closeConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('open');
+}
+
+/* ═══════════════════════════════════════════════════════
+   RENDER
+═══════════════════════════════════════════════════════ */
+function renderAll() {
+  renderSidebar();
+  renderForms();
+}
+
+function renderSidebar() {
+  document.getElementById('day-list').innerHTML = days.map((d, i) => {
+    const pct = dayProgress(d);
+    const ok  = pct >= 80;
+    return `<div class="di ${i === activeIdx ? 'active' : ''}" onclick="setActive(${i})">
+      <div class="dn">${i + 1}</div>
+      <div class="dm">
+        <div class="dm-name">${escH(d.patientName) || 'Unnamed Patient'}</div>
+        <div class="dm-sub">${fmtDate(d.date)} · ${escH(d.dayLabel)}</div>
+        <div class="dm-prog"><div class="dm-prog-bar ${pct === 100 ? 'full' : ''}" style="width:${pct}%"></div></div>
+      </div>
+      <div class="dbadge ${ok ? 'ok' : 'pt'}">${pct}%</div>
+    </div>`;
+  }).join('');
+}
+
+function renderForms() {
+  document.getElementById('content').innerHTML = days.map((d, i) => formHTML(d, i)).join('');
+  // Bind all inputs
+  days.forEach(d => {
+    document.querySelectorAll(`[data-id="${d.id}"][data-f]`).forEach(el => {
+      const handler = () => {
+        syncField(d.id, el.dataset.f, el.value);
+        el.classList.remove('err'); // clear validation error on input
+      };
+      el.addEventListener('input',  handler);
+      el.addEventListener('change', handler);
+    });
+  });
+  document.querySelectorAll('.day-form').forEach((el, i) => el.classList.toggle('active', i === activeIdx));
+}
+
+function imgBlockHTML(d, ns, key, caption) {
+  const bid = `ib-${d.id}-${key}`;
+  const src = d[ns][key];
+  return `<div class="ib ${src ? 'filled' : ''}" id="${bid}">
+    <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onchange="onImg('${d.id}','${ns}','${key}','${bid}',this)">
+    <div class="ip">
+      <div class="ico">📷</div>
+      <div class="lbl">Upload Photo</div>
+      <div class="sub">${escH(caption)}</div>
+    </div>
+    <img class="iprev" src="${src || ''}" alt="${escH(caption)}">
+    <button class="irm" onclick="rmImg('${d.id}','${ns}','${key}','${bid}',event)" title="Remove image">×</button>
+    <div class="icap">${escH(caption)}</div>
+  </div>`;
+}
+
+function formHTML(d, i) {
+  const isLast = i === days.length - 1 && days.length > 1;
+  const { g, f } = getTotals();
+
+  const totalsBanner = isLast ? `
+    <div class="totals-bar" id="totals-${d.id}">
+      <div class="titem"><div class="tlabel">📅 Session Days</div><div class="tval">${days.length}</div></div>
+      <div class="titem"><div class="tlabel">✂️ Total Grafts (${days.length} days)</div><div class="tval" id="tv-g">${g.toLocaleString()}</div></div>
+      <div class="titem"><div class="tlabel">🔬 Total Follicles (${days.length} days)</div><div class="tval" id="tv-f">${f.toLocaleString()}</div></div>
+    </div>` : '';
+
+  return `<div class="day-form ${i === activeIdx ? 'active' : ''}" id="df-${d.id}">
+    <div class="dh">
+      <div class="dh-left">
+        <h2>Day ${i + 1} — Clinical Details</h2>
+        <div class="dsub">${escH(d.dayLabel)} · ${fmtDate(d.date)}</div>
+      </div>
+      <div class="dacts">
+        ${i > 0 ? `<button class="btn-cp" onclick="copyPrev(${i})">↑ Copy Patient Info</button>` : ''}
+        ${days.length > 1 ? `<button class="btn-rm" onclick="removeDay(${i})">🗑 Remove Day</button>` : ''}
+      </div>
+    </div>
+
+    ${totalsBanner}
+
+    <!-- PATIENT INFO -->
+    <div class="card">
+      <div class="card-hd">👤 Patient Information</div>
+      <div class="card-bd">
+        <div class="g3">
+          <div class="fg"><label>Date</label>
+            <input type="date" data-id="${d.id}" data-f="date" value="${escH(d.date)}"></div>
+          <div class="fg"><label>Patient Name *</label>
+            <input type="text" id="f-pname-${d.id}" data-id="${d.id}" data-f="patientName" value="${escH(d.patientName)}" placeholder="e.g. Jahangir"></div>
+          <div class="fg"><label>Day Label</label>
+            <input type="text" data-id="${d.id}" data-f="dayLabel" value="${escH(d.dayLabel)}" placeholder="Day 1"></div>
+          <div class="fg"><label>Clinic</label>
+            <input type="text" data-id="${d.id}" data-f="clinic" value="${escH(d.clinic)}"></div>
+          <div class="fg"><label>Surgeon</label>
+            <input type="text" data-id="${d.id}" data-f="surgeon" value="${escH(d.surgeon)}" placeholder="Dr. Name"></div>
+          <div class="fg"><label>Nurse(s)</label>
+            <input type="text" data-id="${d.id}" data-f="nurse" value="${escH(d.nurse)}" placeholder="Nurse Name(s)"></div>
+          <div class="fg"><label>Age</label>
+            <input type="text" data-id="${d.id}" data-f="age" value="${escH(d.age)}" placeholder="40"></div>
+          <div class="fg"><label>Gender</label>
+            <select data-id="${d.id}" data-f="gender">
+              <option ${d.gender === 'Male'   ? 'selected' : ''}>Male</option>
+              <option ${d.gender === 'Female' ? 'selected' : ''}>Female</option>
+            </select></div>
+          <div class="fg"><label>Diagnosis</label>
+            <input type="text" data-id="${d.id}" data-f="diagnosis" value="${escH(d.diagnosis)}"></div>
+          <div class="fg"><label>Alopecia Grade</label>
+            <input type="text" data-id="${d.id}" data-f="grade" value="${escH(d.grade)}" placeholder="5"></div>
+          <div class="fg"><label>BP (Vitals)</label>
+            <input type="text" data-id="${d.id}" data-f="bp" value="${escH(d.bp)}" placeholder="140/90"></div>
+          <div class="fg"><label>Contraindications</label>
+            <input type="text" data-id="${d.id}" data-f="contraindications" value="${escH(d.contraindications)}"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROCEDURE DATA -->
+    <div class="card">
+      <div class="card-hd">💉 Procedure Data</div>
+      <div class="card-bd">
+        <div class="g4">
+          <div class="fg"><label>Follicles Booked</label>
+            <input type="text" data-id="${d.id}" data-f="folliclesBooked" value="${escH(d.folliclesBooked)}" placeholder="6,000"></div>
+          <div class="fg"><label>No. of Grafts *</label>
+            <input type="text" id="f-grafts-${d.id}" data-id="${d.id}" data-f="grafts" value="${escH(d.grafts)}" placeholder="1,637"></div>
+          <div class="fg"><label>Follicles Implanted</label>
+            <input type="text" data-id="${d.id}" data-f="folliclesImplanted" value="${escH(d.folliclesImplanted)}" placeholder="3,332"></div>
+          <div class="fg"><label>Graft Ratio</label>
+            <input type="text" data-id="${d.id}" data-f="graftRatio" value="${escH(d.graftRatio)}" placeholder="2.0"></div>
+          <div class="fg"><label>Transection Rate</label>
+            <input type="text" data-id="${d.id}" data-f="transectionRate" value="${escH(d.transectionRate)}" placeholder="0.01%"></div>
+          <div class="fg"><label>Extraction Time</label>
+            <input type="text" data-id="${d.id}" data-f="extractionTime" value="${escH(d.extractionTime)}" placeholder="2:00"></div>
+          <div class="fg"><label>Implantation Time</label>
+            <input type="text" data-id="${d.id}" data-f="implantationTime" value="${escH(d.implantationTime)}" placeholder="1:45"></div>
+          <div class="fg"><label>Density (Grafts/cm²)</label>
+            <input type="text" data-id="${d.id}" data-f="density" value="${escH(d.density)}" placeholder="25-30"></div>
+          <div class="fg"><label>Punches</label>
+            <input type="text" data-id="${d.id}" data-f="punches" value="${escH(d.punches)}" placeholder="1"></div>
+          <div class="fg"><label>Implanter Needle</label>
+            <input type="text" data-id="${d.id}" data-f="implanterNeedle" value="${escH(d.implanterNeedle)}" placeholder="3"></div>
+          <div class="fg full"><label>Clinical Notes &amp; Assessment</label>
+            <textarea data-id="${d.id}" data-f="notes" placeholder="Additional notes (auto-notes added on export)…">${escH(d.notes)}</textarea></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLINICAL PHOTOS -->
+    <div class="card">
+      <div class="card-hd" id="img-hd-${d.id}">📸 Clinical Photos — 4 slots (all required)</div>
+      <div class="card-bd">
+        <div class="ig4">
+          ${imgBlockHTML(d, 'img', 'clinical_marking', 'Clinical marking of implantation area')}
+          ${imgBlockHTML(d, 'img', 'recipient_after',  'Recipient area after implantation')}
+          ${imgBlockHTML(d, 'img', 'donor_after',      'Donor area after extraction')}
+          ${imgBlockHTML(d, 'img', 'follicle_tray',    'Follicle tray with hair count')}
+        </div>
+      </div>
+    </div>
+
+    <!-- OT FORM PHOTOS -->
+    <div class="card">
+      <div class="card-hd" id="ot-hd-${d.id}">📋 OT Form Photos — 4 slots (all required)</div>
+      <div class="card-bd">
+        <div class="ig4">
+          ${imgBlockHTML(d, 'ot', 'ot_page1', 'OT Form — Page 1')}
+          ${imgBlockHTML(d, 'ot', 'ot_page2', 'OT Form — Page 2')}
+          ${imgBlockHTML(d, 'ot', 'adt',      'Average Density Target (ADT)')}
+          ${imgBlockHTML(d, 'ot', 'met',      'Maximum Extraction Target (MET)')}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════
+   STATE MUTATIONS
+═══════════════════════════════════════════════════════ */
+function syncField(id, field, val) {
+  const d = days.find(x => x.id === id);
+  if (!d) return;
+  d[field] = val;
+  renderSidebar();
+  updateTotalsDisplay();
+  scheduleAutosave();
+}
+
+function updateTotalsDisplay() {
+  if (days.length < 2) return;
+  const { g, f } = getTotals();
+  const gEl = document.getElementById('tv-g');
+  const fEl = document.getElementById('tv-f');
+  if (gEl) gEl.textContent = g.toLocaleString();
+  if (fEl) fEl.textContent = f.toLocaleString();
+}
+
+function setActive(i) {
+  activeIdx = i;
+  document.querySelectorAll('.di').forEach((el, j)        => el.classList.toggle('active', j === i));
+  document.querySelectorAll('.day-form').forEach((el, j)  => el.classList.toggle('active', j === i));
+}
+
+function addDay() {
+  days.push(newDay(days.length + 1));
+  renderAll();
+  setActive(days.length - 1);
+  scheduleAutosave();
+}
+
+function removeDay(i) {
+  if (days.length === 1) { toast('At least one day is required', 'err'); return; }
+  days.splice(i, 1);
+  days.forEach((d, j) => { d.n = j + 1; });
+  activeIdx = Math.min(activeIdx, days.length - 1);
+  renderAll();
+  scheduleAutosave();
+}
+
+function copyPrev(i) {
+  const prev = days[i - 1], cur = days[i];
+  ['patientName','clinic','surgeon','nurse','age','gender','diagnosis','grade','contraindications','folliclesBooked']
+    .forEach(f => cur[f] = prev[f]);
+  renderForms();
+  toast('Patient info copied from Day ' + i, 'ok');
+  scheduleAutosave();
+}
+
+/* ═══════════════════════════════════════════════════════
+   IMAGE HANDLING
+═══════════════════════════════════════════════════════ */
+function onImg(dayId, ns, key, bid, input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  // Validate file type & size
+  if (!file.type.startsWith('image/')) { toast('Please select an image file', 'err'); return; }
+  if (file.size > 20 * 1024 * 1024)   { toast('Image too large (max 20MB)', 'err');  return; }
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    // Compress image before storing to avoid performance/storage issues
+    compressImage(e.target.result, 1200, 0.85, compressed => {
+      const d = days.find(x => x.id === dayId);
+      if (!d) return;
+      d[ns][key] = compressed;
+      const b = document.getElementById(bid);
+      if (b) {
+        b.classList.add('filled');
+        b.classList.remove('ib-err');
+        const prev = b.querySelector('.iprev');
+        if (prev) prev.src = compressed;
+      }
+      renderSidebar();
+      scheduleAutosave();
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+function compressImage(dataUrl, maxW, quality, cb) {
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    let w = img.width, h = img.height;
+    if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, w, h);
+    cb(canvas.toDataURL('image/jpeg', quality));
+  };
+  img.onerror = () => cb(dataUrl); // fallback: use original
+  img.src = dataUrl;
+}
+
+function rmImg(dayId, ns, key, bid, evt) {
+  evt.preventDefault(); evt.stopPropagation();
+  const d = days.find(x => x.id === dayId);
+  if (!d) return;
+  d[ns][key] = null;
+  const b = document.getElementById(bid);
+  if (b) {
+    b.classList.remove('filled');
+    const prev  = b.querySelector('.iprev');
+    const input = b.querySelector('input[type=file]');
+    if (prev)  prev.src = '';
+    if (input) input.value = '';
+  }
+  renderSidebar();
+  scheduleAutosave();
+}
+
+/* ═══════════════════════════════════════════════════════
+   VALIDATION
+═══════════════════════════════════════════════════════ */
+function validate() {
+  const errors = [];
+  days.forEach((d, i) => {
+    const label = `Day ${i + 1} (${d.patientName || 'Unnamed'})`;
+    if (!d.patientName.trim()) errors.push(`${label}: Patient Name is required`);
+    if (!d.grafts.toString().trim()) errors.push(`${label}: No. of Grafts is required`);
+
+    const imgCount = Object.values(d.img).filter(Boolean).length;
+    const otCount  = Object.values(d.ot).filter(Boolean).length;
+    if (imgCount < 4) errors.push(`${label}: All 4 Clinical Photos required (${imgCount}/4 uploaded)`);
+    if (otCount  < 4) errors.push(`${label}: All 4 OT Form Photos required (${otCount}/4 uploaded)`);
+
+    // Highlight errors in DOM
+    const pnEl = document.getElementById(`f-pname-${d.id}`);
+    const grEl = document.getElementById(`f-grafts-${d.id}`);
+    if (pnEl) pnEl.classList.toggle('err', !d.patientName.trim());
+    if (grEl) grEl.classList.toggle('err', !d.grafts.toString().trim());
+
+    // Highlight image blocks
+    Object.entries(d.img).forEach(([k, v]) => {
+      const b = document.getElementById(`ib-${d.id}-${k}`);
+      if (b) b.classList.toggle('ib-err', !v);
+    });
+    Object.entries(d.ot).forEach(([k, v]) => {
+      const b = document.getElementById(`ib-${d.id}-${k}`);
+      if (b) b.classList.toggle('ib-err', !v);
+    });
+  });
+  return errors;
+}
+
+/* ═══════════════════════════════════════════════════════
+   UI FEEDBACK
+═══════════════════════════════════════════════════════ */
+function toast(msg, type = 'inf', duration = 3500) {
+  const stack = document.getElementById('toast-stack');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  stack.appendChild(el);
+  setTimeout(() => {
+    el.classList.add('out');
+    setTimeout(() => el.remove(), 350);
+  }, duration);
+}
+
+function setStatus(msg, busy = false, ephemeral = false) {
+  document.getElementById('stext').textContent = msg;
+  document.getElementById('sdot').className = 'sdot ' + (busy ? 'busy' : (msg.startsWith('✅') ? 'ready' : 'ready'));
+  if (ephemeral) {
+    setTimeout(() => {
+      if (document.getElementById('stext').textContent === msg) {
+        document.getElementById('stext').textContent = 'Ready — data auto-saves as you type';
+      }
+    }, 3000);
+  }
+}
+
+function showLoading(msg = 'Generating…', sub = 'Please wait') {
+  document.getElementById('loading-msg').textContent = msg;
+  document.getElementById('loading-sub').textContent = sub;
+  document.getElementById('loading').classList.add('open');
+}
+function hideLoading() {
+  document.getElementById('loading').classList.remove('open');
+}
+
+function setBtns(disabled) {
+  ['btn-prev','btn-pptx','btn-pdf'].forEach(id => {
+    document.getElementById(id).disabled = disabled;
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   PREVIEW MODAL
+═══════════════════════════════════════════════════════ */
+function openPreview() {
+  const mb = document.getElementById('modal-body');
+  mb.innerHTML = '';
+  days.forEach((d, i) => {
+    const note = getNotesForOutput(d, i);
+    const cWrap = document.createElement('div');
+    cWrap.className = 'slide-wrap';
+    cWrap.innerHTML = `<div class="slide-label">Day ${i + 1} — Clinical Details Slide</div>` + pvClinical(d, i, note);
+    mb.appendChild(cWrap);
+    const oWrap = document.createElement('div');
+    oWrap.className = 'slide-wrap';
+    oWrap.innerHTML = `<div class="slide-label">Day ${i + 1} — OT Forms Slide</div>` + pvOT(d);
+    mb.appendChild(oWrap);
+  });
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closePreview() { document.getElementById('modal-overlay').classList.remove('open'); }
+function onModalOverlayClick(e) { if (e.target === document.getElementById('modal-overlay')) closePreview(); }
+
+function pvClinical(d, i, note) {
+  const pn = escH(d.patientName) + (days.length > 1 ? ' (' + escH(d.dayLabel) + ')' : '');
+  const ph = (src, cap) => `<div class="pv-pcell">
+    ${src ? `<img src="${src}" loading="lazy">` : `<div class="pv-noph">${escH(cap)}</div>`}
+    <div class="pv-cap">${escH(cap)}</div></div>`;
+  return `<div class="pv-slide">
+    <div class="pv-photos">
+      ${ph(d.img.clinical_marking, 'Clinical marking of implantation area')}
+      ${ph(d.img.recipient_after,  'Recipient area after implantation')}
+      ${ph(d.img.donor_after,      'Donor area after extraction')}
+      ${ph(d.img.follicle_tray,    'Follicle tray with hair count')}
+    </div>
+    <div class="pv-panel">
+      <div class="pv-ptitle">Clinical Details</div>
+      <div class="pv-rows">
+        <div class="pv-r">Date : ${fmtDate(d.date)}</div>
+        <div class="pv-r gap"></div>
+        <div class="pv-r">Patient Name : ${pn}</div>
+        <div class="pv-r">Clinic : ${escH(d.clinic)}</div>
+        <div class="pv-r gap"></div>
+        <div class="pv-r">Surgeon : ${escH(d.surgeon)} &nbsp;&nbsp; Nurse : ${escH(d.nurse)}</div>
+        <div class="pv-r gap"></div>
+        <div class="pv-r">Age : ${escH(d.age)} &nbsp;&nbsp; Gender : ${escH(d.gender)}</div>
+        <div class="pv-sep"></div>
+        <div class="pv-r">Diagnosis : ${escH(d.diagnosis)}</div>
+        <div class="pv-r">Alopecia Grade : ${escH(d.grade)}</div>
+        <div class="pv-r gap"></div>
+        <div class="pv-r">Vitals : BP : ${escH(d.bp)} &nbsp;&nbsp; Contraindications : ${escH(d.contraindications)}</div>
+        <div class="pv-sep"></div>
+        <div class="pv-r">Follicles Booked : ${escH(d.folliclesBooked)}</div>
+        <div class="pv-r gap"></div>
+        <div class="pv-r">No. of Grafts : ${escH(d.grafts)} &nbsp;&nbsp; Follicles Implanted : ${escH(d.folliclesImplanted)}</div>
+        <div class="pv-r gap"></div>
+        <div class="pv-r">Graft Ratio : ${escH(d.graftRatio)} &nbsp;&nbsp; Transection Rate : ${escH(d.transectionRate)}</div>
+        <div class="pv-sep"></div>
+        <div class="pv-r">Motorized Extraction Time : ${escH(d.extractionTime)}</div>
+        <div class="pv-r">Implantation Time : ${escH(d.implantationTime)}</div>
+        <div class="pv-r gap"></div>
+        <div class="pv-r">Density (Grafts / cm²) : ${escH(d.density)}</div>
+        <div class="pv-r gap"></div>
+        <div class="pv-r">Punches : ${escH(d.punches)} &nbsp;&nbsp; Implanter Needle : ${escH(d.implanterNeedle)}</div>
+      </div>
+      <div class="pv-notes"><strong>Clinical Notes and Assessment:</strong>
+        ${note ? `<br><span style="white-space:pre-line">${escH(note)}</span>` : ''}</div>
+    </div>
+  </div>`;
+}
+
+function pvOT(d) {
+  const oc = (src, cap) => `<div class="pv-ocell">
+    ${src ? `<img src="${src}" loading="lazy">` : `<div class="pv-onoph">${escH(cap)}</div>`}
+    <div class="pv-ocap">${escH(cap)}</div></div>`;
+  return `<div class="pv-ot">
+    ${oc(d.ot.ot_page1, 'OT Form- Page 1')}
+    ${oc(d.ot.ot_page2, 'OT Form- Page 2')}
+    <div class="pv-oright">
+      <div class="pv-ohalf">
+        ${d.ot.adt ? `<img src="${d.ot.adt}" loading="lazy">` : `<div class="pv-onoph">ADT</div>`}
+        <div class="pv-ocap">Average Density Target (ADT)</div>
+      </div>
+      <div class="pv-ohalf">
+        ${d.ot.met ? `<img src="${d.ot.met}" loading="lazy">` : `<div class="pv-onoph">MET</div>`}
+        <div class="pv-ocap">Maximum Extraction Target (MET)</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════
+   GENERATE (shared entry point)
+═══════════════════════════════════════════════════════ */
+async function generateReport(type) {
+  const errors = validate();
+  if (errors.length > 0) {
+    // Switch to first errored day
+    const firstErrDay = days.find(d => !d.patientName.trim() || !d.grafts.toString().trim() ||
+      Object.values(d.img).some(v => !v) || Object.values(d.ot).some(v => !v));
+    if (firstErrDay) setActive(days.indexOf(firstErrDay));
+    toast('⚠️ Please fix: ' + errors[0], 'err', 5000);
+    if (errors.length > 1) setTimeout(() => toast(`+${errors.length - 1} more issue(s)`, 'warn'), 400);
+    return;
+  }
+
+  setBtns(true);
+  showLoading(`Building ${type.toUpperCase()}…`, 'Processing images and layout…');
+  setStatus(`Generating ${type.toUpperCase()}…`, true);
+
+  // Yield to browser to paint loading overlay first
+  await new Promise(r => setTimeout(r, 80));
+
+  try {
+    if (type === 'pptx') await genPPTX();
+    else genPDF();
+  } catch (e) {
+    console.error('Generation error:', e);
+    toast('❌ Error: ' + (e.message || 'Unknown error'), 'err', 6000);
+    setStatus('Error — check console', false);
+  } finally {
+    hideLoading();
+    setBtns(false);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   PPTX GENERATION
+═══════════════════════════════════════════════════════ */
+async function ensurePptxGenJS() {
+  // Already loaded via <script> tag in head — just wait if still loading
+  let tries = 0;
+  while (typeof PptxGenJS === 'undefined' && tries < 50) {
+    await new Promise(r => setTimeout(r, 100));
+    tries++;
+  }
+  if (typeof PptxGenJS === 'undefined') {
+    // Fallback: try dynamic load
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js');
+    await new Promise(r => setTimeout(r, 500));
+  }
+  if (typeof PptxGenJS === 'undefined') throw new Error('PptxGenJS library could not be loaded. Check your internet connection.');
+}
+
+async function genPPTX() {
+  await ensurePptxGenJS();
+
+  const pptx = new PptxGenJS();
+  pptx.defineLayout({ name: 'CLINICAL', width: 10, height: 5.625 });
+  pptx.layout = 'CLINICAL';
+  pptx.title   = `DHI Clinical Report — ${days[0]?.patientName || 'Patient'}`;
+  pptx.subject = 'Hair Transplant OT Report';
+  pptx.author  = days[0]?.surgeon || 'DHI';
+
+  for (let i = 0; i < days.length; i++) {
+    const d    = days[i];
+    const note = getNotesForOutput(d, i);
+    await buildClinicalSlide(pptx, d, note);
+    await buildOTSlide(pptx, d);
+  }
+
+  const fname = `DHI_${(days[0]?.patientName || 'Report').replace(/\s+/g,'_')}_${days[0]?.date || 'report'}`;
+  await pptx.writeFile({ fileName: fname + '.pptx' });
+
+  setStatus('✅ PPTX downloaded!', false, true);
+  toast('✅ PPTX downloaded successfully!', 'ok');
+}
+
+async function buildClinicalSlide(pptx, d, note) {
+  const s = pptx.addSlide();
+  s.background = { color: 'FFFFFF' };
+
+  // Right panel background
+  s.addShape(pptx.ShapeType.rect, {
+    x: 6.7, y: 0, w: 3.3, h: 5.625,
+    fill: { color: 'F4F4F4' }, line: { color: 'CCCCCC', width: 0.75 }
+  });
+
+  // "Clinical Details" — bold underlined centered
+  s.addText('Clinical Details', {
+    x: 6.78, y: 0.1, w: 3.15, h: 0.3,
+    fontSize: 11, bold: true, underline: { type: 'sng' },
+    color: '000000', align: 'center', fontFace: 'Arial'
+  });
+
+  // Data text block
+  const lines = [
+    `Date : ${fmtDate(d.date)}`, '',
+    `Patient Name : ${d.patientName}${days.length > 1 ? ' (' + d.dayLabel + ')' : ''}`,
+    `Clinic : ${d.clinic}`, '',
+    `Surgeon : ${d.surgeon}      Nurse : ${d.nurse}`, '',
+    `Age : ${d.age}               Gender : ${d.gender}`, '',
+    `Diagnosis : ${d.diagnosis}`,
+    `Alopecia Grade : ${d.grade}`, '',
+    `Vitals : BP : ${d.bp}        Contraindications : ${d.contraindications}`, '',
+    `Follicles Booked : ${d.folliclesBooked}`, '',
+    `No. of Grafts : ${d.grafts}      Follicles Implanted : ${d.folliclesImplanted}`, '',
+    `Graft Ratio : ${d.graftRatio}             Transection Rate : ${d.transectionRate}`, '',
+    `Motorized Extraction Time : ${d.extractionTime}`,
+    `Implantation Time : ${d.implantationTime}`, '',
+    `Density (Grafts / cm\u00B2) : ${d.density}`, '',
+    `Punches : ${d.punches}       Implanter Needle : ${d.implanterNeedle}`, '',
+    `Clinical Notes and Assessment:`,
+    ...(note ? note.split('\n') : [''])
+  ];
+
+  s.addText(lines.join('\n'), {
+    x: 6.78, y: 0.44, w: 3.15, h: 5.1,
+    fontSize: 7.3, color: '000000', fontFace: 'Arial',
+    valign: 'top', wrap: true, lineSpacingMultiple: 1.1
+  });
+
+  // 4 photos — 2×2 grid
+  const PW = 3.1, PH = 2.5;
+  const photos = [
+    { key: 'clinical_marking', x: 0.08,  y: 0.06, cap: 'Clinical marking of implantation area' },
+    { key: 'recipient_after',  x: 3.38,  y: 0.06, cap: 'Recipient area after implantation' },
+    { key: 'donor_after',      x: 0.08,  y: 2.97, cap: 'Donor area after extraction' },
+    { key: 'follicle_tray',    x: 3.38,  y: 2.97, cap: 'Follicle tray with hair count' },
+  ];
+  for (const p of photos) {
+    if (d.img[p.key]) {
+      try {
+        s.addImage({ data: d.img[p.key], x: p.x, y: p.y, w: PW, h: PH, sizing: { type: 'cover', w: PW, h: PH } });
+      } catch(e) { addPH(s, pptx, p.x, p.y, PW, PH, p.cap); }
+    } else { addPH(s, pptx, p.x, p.y, PW, PH, p.cap); }
+    s.addText(p.cap, { x: p.x, y: p.y + PH + 0.02, w: PW, h: 0.24, fontSize: 7.5, italic: true, color: '333333', align: 'center', fontFace: 'Arial' });
+  }
+}
+
+async function buildOTSlide(pptx, d) {
+  const s = pptx.addSlide();
+  s.background = { color: 'FFFFFF' };
+
+  // Left 2 cols: OT Page 1 & 2 — full-height
+  const TW = 3.05, TH = 4.85, TY = 0.22;
+  for (const o of [
+    { key: 'ot_page1', x: 0.12, cap: 'OT Form- Page 1' },
+    { key: 'ot_page2', x: 3.35, cap: 'OT Form- Page 2' },
+  ]) {
+    if (d.ot[o.key]) {
+      try { s.addImage({ data: d.ot[o.key], x: o.x, y: TY, w: TW, h: TH, sizing: { type: 'contain', w: TW, h: TH } }); }
+      catch(e) { addPH(s, pptx, o.x, TY, TW, TH, o.cap); }
+    } else { addPH(s, pptx, o.x, TY, TW, TH, o.cap); }
+    s.addText(o.cap, { x: o.x, y: TY + TH + 0.04, w: TW, h: 0.27, fontSize: 8, italic: true, color: '333333', align: 'center', fontFace: 'Arial' });
+  }
+
+  // Right col: ADT top + MET bottom
+  const RX = 6.58, RW = 3.2, RH = 2.26;
+  for (const o of [
+    { key: 'adt', y: 0.14, cap: 'Average Density Target (ADT)' },
+    { key: 'met', y: 2.82, cap: 'Maximum Extraction Target (MET)' },
+  ]) {
+    if (d.ot[o.key]) {
+      try { s.addImage({ data: d.ot[o.key], x: RX, y: o.y, w: RW, h: RH, sizing: { type: 'contain', w: RW, h: RH } }); }
+      catch(e) { addPH(s, pptx, RX, o.y, RW, RH, o.cap); }
+    } else { addPH(s, pptx, RX, o.y, RW, RH, o.cap); }
+    s.addText(o.cap, { x: RX, y: o.y + RH + 0.03, w: RW, h: 0.24, fontSize: 7.5, italic: true, color: '333333', align: 'center', fontFace: 'Arial' });
+  }
+}
+
+function addPH(s, pptx, x, y, w, h, label) {
+  s.addShape(pptx.ShapeType.rect, { x, y, w, h, fill: { color: 'F0F0F0' }, line: { color: 'CCCCCC', dashType: 'dash', width: 0.75 } });
+  s.addText('[ ' + label + ' ]', { x, y: y + h / 2 - 0.15, w, h: 0.3, fontSize: 7, color: 'AAAAAA', align: 'center', fontFace: 'Arial' });
+}
+
+/* ═══════════════════════════════════════════════════════
+   PDF GENERATION
+═══════════════════════════════════════════════════════ */
+function genPDF() {
+  const html = buildPrintHTML();
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const win  = window.open(url, '_blank');
+
+  if (!win) {
+    // Popup blocked — download as file
+    const a = document.createElement('a');
+    a.href = url; a.download = pdfFilename() + '.html'; a.click();
+    toast('📄 HTML saved — open file and press Ctrl+P → Save as PDF', 'warn', 7000);
+    setStatus('HTML downloaded — open and print to PDF', false, true);
+    return;
+  }
+
+  win.onload = () => {
+    setTimeout(() => {
+      try { win.focus(); win.print(); }
+      catch(e) { /* ignore */ }
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }, 600);
+  };
+
+  setStatus('✅ Print dialog opened', false, true);
+  toast('✅ Print dialog opened — choose "Save as PDF"', 'ok');
+}
+
+function pdfFilename() {
+  return `DHI_${(days[0]?.patientName || 'Report').replace(/\s+/g,'_')}_${days[0]?.date || 'report'}`;
+}
+
+function buildPrintHTML() {
+  const slides = days.map((d, i) => {
+    const note = getNotesForOutput(d, i);
+    return printClinical(d, note) + printOT(d);
+  }).join('');
+
+  return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<title>DHI Clinical Report — ${escTxt(days[0]?.patientName || 'Patient')}</title>
+<style>
+@page { size: 10in 5.625in; margin: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, Helvetica, sans-serif; background: #fff; }
+
+/* Clinical slide */
+.slide { width: 10in; height: 5.625in; display: flex; overflow: hidden; background: #fff; page-break-after: always; }
+.photos { flex: 0 0 6.68in; padding: .07in .09in 0 .09in; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: .034in .07in; }
+.pcell { display: flex; flex-direction: column; overflow: hidden; }
+.pcell img { flex: 1; width: 100%; height: 0; min-height: 0; object-fit: cover; object-position: center; display: block; }
+.noph { flex: 1; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #bbb; font-size: 7pt; text-align: center; border: 1px dashed #ccc; padding: 4px; }
+.cap { font-size: 6.8pt; font-style: italic; text-align: center; padding: 1.5px 0 2.5px; color: #444; flex-shrink: 0; line-height: 1.2; }
+
+/* Right data panel */
+.panel { flex: 0 0 3.32in; background: #F4F4F4; border-left: 1px solid #C8C8C8; padding: .1in .14in .08in; display: flex; flex-direction: column; overflow: hidden; }
+.p-title { font-size: 11pt; font-weight: bold; text-align: center; text-decoration: underline; margin-bottom: .06in; color: #000; }
+.p-body { flex: 1; font-size: 7.4pt; color: #000; overflow: hidden; line-height: 1.45; }
+.dr { margin-bottom: 2.5px; }
+.dr.gap { margin-bottom: 5px; }
+.sep { border: none; border-top: .5px solid #CCC; margin: 4px 0; }
+.notes { margin-top: 4px; background: #fff; padding: 4px 6px; border-left: 2.5px solid #1a6b9a; font-size: 7pt; color: #222; line-height: 1.5; flex-shrink: 0; }
+
+/* OT slide */
+.ot { width: 10in; height: 5.625in; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .17in; padding: .18in; background: #fff; page-break-after: always; overflow: hidden; }
+.ocell { display: flex; flex-direction: column; overflow: hidden; }
+.ocell img { flex: 1; width: 100%; height: 0; min-height: 0; object-fit: contain; border: .5px solid #DDD; display: block; }
+.ocell .noph { flex: 1; }
+.ocap { font-size: 7.5pt; font-style: italic; text-align: center; padding: 4px 0 0; color: #444; flex-shrink: 0; }
+.oright { display: flex; flex-direction: column; gap: .1in; overflow: hidden; }
+.ohalf { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+.ohalf img { flex: 1; width: 100%; height: 0; min-height: 0; object-fit: contain; border: .5px solid #DDD; display: block; }
+.ohalf .noph { flex: 1; font-size: 8pt; }
+.ohalf .ocap { flex-shrink: 0; }
+
+@media print {
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .slide, .ot { page-break-after: always; page-break-inside: avoid; }
+}
+</style></head>
+<body>${slides}</body></html>`;
+}
+
+function printClinical(d, note) {
+  const pn = escTxt(d.patientName) + (days.length > 1 ? ' (' + escTxt(d.dayLabel) + ')' : '');
+  const ph = (src, cap) => `<div class="pcell">${src ? `<img src="${src}">` : `<div class="noph">${escTxt(cap)}</div>`}<div class="cap">${escTxt(cap)}</div></div>`;
+  return `<div class="slide">
+  <div class="photos">
+    ${ph(d.img.clinical_marking, 'Clinical marking of implantation area')}
+    ${ph(d.img.recipient_after,  'Recipient area after implantation')}
+    ${ph(d.img.donor_after,      'Donor area after extraction')}
+    ${ph(d.img.follicle_tray,    'Follicle tray with hair count')}
+  </div>
+  <div class="panel">
+    <div class="p-title">Clinical Details</div>
+    <div class="p-body">
+      <div class="dr">Date : ${escTxt(fmtDate(d.date))}</div>
+      <div class="dr gap"></div>
+      <div class="dr">Patient Name : ${pn}</div>
+      <div class="dr">Clinic : ${escTxt(d.clinic)}</div>
+      <div class="dr gap"></div>
+      <div class="dr">Surgeon : ${escTxt(d.surgeon)} &nbsp;&nbsp; Nurse : ${escTxt(d.nurse)}</div>
+      <div class="dr gap"></div>
+      <div class="dr">Age : ${escTxt(d.age)} &nbsp;&nbsp;&nbsp; Gender : ${escTxt(d.gender)}</div>
+      <div class="sep"></div>
+      <div class="dr">Diagnosis : ${escTxt(d.diagnosis)}</div>
+      <div class="dr">Alopecia Grade : ${escTxt(d.grade)}</div>
+      <div class="dr gap"></div>
+      <div class="dr">Vitals : BP : ${escTxt(d.bp)} &nbsp;&nbsp; Contraindications : ${escTxt(d.contraindications)}</div>
+      <div class="sep"></div>
+      <div class="dr">Follicles Booked : ${escTxt(d.folliclesBooked)}</div>
+      <div class="dr gap"></div>
+      <div class="dr">No. of Grafts : ${escTxt(d.grafts)} &nbsp;&nbsp; Follicles Implanted : ${escTxt(d.folliclesImplanted)}</div>
+      <div class="dr gap"></div>
+      <div class="dr">Graft Ratio : ${escTxt(d.graftRatio)} &nbsp;&nbsp; Transection Rate : ${escTxt(d.transectionRate)}</div>
+      <div class="sep"></div>
+      <div class="dr">Motorized Extraction Time : ${escTxt(d.extractionTime)}</div>
+      <div class="dr">Implantation Time : ${escTxt(d.implantationTime)}</div>
+      <div class="dr gap"></div>
+      <div class="dr">Density (Grafts / cm²) : ${escTxt(d.density)}</div>
+      <div class="dr gap"></div>
+      <div class="dr">Punches : ${escTxt(d.punches)} &nbsp;&nbsp; Implanter Needle : ${escTxt(d.implanterNeedle)}</div>
+    </div>
+    <div class="notes"><strong>Clinical Notes and Assessment:</strong>${note ? `<br><span style="white-space:pre-line">${escTxt(note)}</span>` : ''}</div>
+  </div>
+</div>`;
+}
+
+function printOT(d) {
+  const oc = (src, cap) => `<div class="ocell">${src ? `<img src="${src}">` : `<div class="noph">${escTxt(cap)}</div>`}<div class="ocap">${escTxt(cap)}</div></div>`;
+  return `<div class="ot">
+  ${oc(d.ot.ot_page1, 'OT Form- Page 1')}
+  ${oc(d.ot.ot_page2, 'OT Form- Page 2')}
+  <div class="oright">
+    <div class="ohalf">${d.ot.adt ? `<img src="${d.ot.adt}">` : `<div class="noph">ADT</div>`}<div class="ocap">Average Density Target (ADT)</div></div>
+    <div class="ohalf">${d.ot.met ? `<img src="${d.ot.met}">` : `<div class="noph">MET</div>`}<div class="ocap">Maximum Extraction Target (MET)</div></div>
+  </div>
+</div>`;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SCRIPT LOADER (fallback)
+═══════════════════════════════════════════════════════ */
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    if (document.querySelector(`script[src="${src}"]`)) { res(); return; }
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload  = res;
+    s.onerror = () => rej(new Error('Script load failed: ' + src));
+    document.head.appendChild(s);
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   BACKUP BUTTON — toggle between download & restore
+═══════════════════════════════════════════════════════ */
+function showBackupMenu() {
+  // Show 2 toast-style action prompts
+  const t1 = document.createElement('div');
+  t1.className = 'toast inf';
+  t1.style.cssText = 'cursor:pointer;display:flex;align-items:center;gap:8px';
+  t1.innerHTML = '📦 <span>Download Backup</span>';
+  t1.onclick = () => { t1.remove(); t2.remove(); downloadBackup(); };
+
+  const t2 = document.createElement('div');
+  t2.className = 'toast inf';
+  t2.style.cssText = 'cursor:pointer;display:flex;align-items:center;gap:8px';
+  t2.innerHTML = '📂 <span>Restore from Backup</span>';
+  t2.onclick = () => { t1.remove(); t2.remove(); triggerRestore(); };
+
+  const stack = document.getElementById('toast-stack');
+  stack.appendChild(t1);
+  stack.appendChild(t2);
+  setTimeout(() => { t1.remove(); t2.remove(); }, 6000);
+}
+
+/* ═══════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════ */
+function init() {
+  const restored = loadSaved();
+  if (!restored || days.length === 0) {
+    days = [newDay(1)];
+    activeIdx = 0;
+  }
+  renderAll();
+  if (restored) {
+    setStatus('✅ Session restored from auto-save', false, true);
+  }
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); manualSave(); }
+  if (e.key === 'Escape') { closePreview(); closeConfirm(); }
+});
+
+// Run
+init();
+</script>
+</body>
+</html>
